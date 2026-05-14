@@ -173,6 +173,63 @@ async function main() {
     },
   });
 
+  // Seed Kamus items for E2E tests
+  const seedKamus1 = await prisma.kamus.upsert({
+    where: { id: 'seed-kamus-1' },
+    update: {},
+    create: {
+      id: 'seed-kamus-1',
+      code: 'KMP-SEED-001',
+      name: 'Berpikir Analitis',
+      type: 'kompetensi',
+      description: 'Kemampuan menganalisis masalah secara sistematis dan logis',
+      behavioralIndicators: 'Mampu mengidentifikasi akar masalah; Menggunakan data untuk pengambilan keputusan',
+      createdBy: testAdmin.id,
+      updatedBy: testAdmin.id,
+    },
+  });
+
+  const seedKamus2 = await prisma.kamus.upsert({
+    where: { id: 'seed-kamus-2' },
+    update: {},
+    create: {
+      id: 'seed-kamus-2',
+      code: 'POT-SEED-001',
+      name: 'Daya Tahan Stres',
+      type: 'potensi',
+      description: 'Kemampuan mengelola tekanan kerja dan tetap produktif',
+      behavioralIndicators: 'Tetap tenang dalam situasi tekanan; Mampu memprioritaskan tugas',
+      createdBy: testAdmin.id,
+      updatedBy: testAdmin.id,
+    },
+  });
+
+  const seedKamus3 = await prisma.kamus.upsert({
+    where: { id: 'seed-kamus-3' },
+    update: {},
+    create: {
+      id: 'seed-kamus-3',
+      code: 'KMP-SEED-002',
+      name: 'Kepemimpinan',
+      type: 'kompetensi',
+      description: 'Kemampuan memimpin dan mengarahkan tim',
+      behavioralIndicators: 'Mampu memotivasi anggota tim; Mengambil keputusan strategis',
+      createdBy: testAdmin.id,
+      updatedBy: testAdmin.id,
+    },
+  });
+
+  // Seed KamusSubmitted event for E2E tests
+  const seedKamusEvent = await prisma.domainEvent.upsert({
+    where: { id: 'seed-event-kamus-1' },
+    update: {},
+    create: {
+      id: 'seed-event-kamus-1',
+      type: 'KamusSubmitted',
+      payload: { itemCount: 3, uploadedBy: testAdmin.id, timestamp: new Date().toISOString() },
+    },
+  });
+
   console.log({
     originalAdmin,
     testAdmin,
@@ -186,6 +243,10 @@ async function main() {
     seedInvitationSent,
     seedInvitationExpired,
     seedEvent,
+    seedKamus1,
+    seedKamus2,
+    seedKamus3,
+    seedKamusEvent,
   });
 }
 
