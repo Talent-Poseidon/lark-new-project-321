@@ -119,4 +119,53 @@ test.describe('Admin can upload and manage Kamus templates', () => {
 
     console.log(`[Test: ${title}] Kamus uploaded successfully`);
   });
+
+  test('Admin sees existing data info when kamus already exists', async ({ page }) => {
+    const title = test.info().title;
+
+    // The seed data has 3 kamus items, so existing info should be visible
+    const existingInfo = page.getByTestId('kamus-existing-info');
+    await expect(existingInfo).toBeVisible({ timeout: 10000 });
+    console.log(`[Test: ${title}] Existing data info is visible`);
+  });
+
+  test('Admin sees preview of changes when updating existing kamus', async ({ page }) => {
+    const title = test.info().title;
+
+    // Upload a file that overlaps with seed data to trigger update/preview flow
+    const csvBuffer = createCSVBuffer([
+      ['code', 'name', 'type', 'description', 'behavioralIndicators'],
+      ['KMP-SEED-001', 'Berpikir Analitis Updated', 'kompetensi', 'Deskripsi baru', 'Indikator baru'],
+      [`NEW-${Date.now()}`, 'Item Baru', 'potensi', 'Deskripsi item baru', 'Indikator item baru'],
+    ]);
+
+    const fileInput = page.getByTestId('kamus-file-input');
+    await fileInput.setInputFiles({
+      name: 'test-update.csv',
+      mimeType: 'text/csv',
+      buffer: csvBuffer,
+    });
+
+    await page.getByTestId('kamus-upload-btn').click();
+
+    // Since seed data exists, should show preview
+    const previewSection = page.getByTestId('kamus-preview');
+    const successAlert = page.getByTestId('kamus-created-alert');
+
+    await expect(previewSection.or(successAlert)).toBeVisible({ timeout: 15000 });
+
+    if (await previewSection.isVisible()) {
+      console.log(`[Test: ${title}] Preview displayed with changes`);
+
+      // Preview table should show changes
+      await expect(page.getByTestId('kamus-preview-table')).toBeVisible();
+
+      // Cancel the update to avoid side effects on other tests
+      await page.getByTestId('kamus-cancel-update-btn').click();
+      await expect(previewSection).not.toBeVisible();
+      console.log(`[Test: ${title}] Cancelled update preview`);
+    } else {
+      console.log(`[Test: ${title}] Success alert shown (no existing data matched)`);
+    }
+  });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,7 +66,19 @@ export default function KamusUploadPage() {
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [confirming, setConfirming] = useState<boolean>(false);
+  const [existingCount, setExistingCount] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/kamus")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setExistingCount(data.length);
+        }
+      })
+      .catch((err: Error) => console.error(err));
+  }, []);
 
   const resetState = () => {
     setSuccessMessage("");
@@ -120,10 +132,11 @@ export default function KamusUploadPage() {
     const progressInterval = simulateProgress();
 
     try {
-      // First check if kamus already exists for update flow
+      // Re-check existing data (may have changed since page load)
       const checkRes = await fetch("/api/kamus");
       const existingItems = await checkRes.json();
       const hasExistingData = Array.isArray(existingItems) && existingItems.length > 0;
+      if (hasExistingData) setExistingCount(existingItems.length);
 
       if (hasExistingData) {
         // Preview changes for update
@@ -174,6 +187,7 @@ export default function KamusUploadPage() {
         setSuccessMessage(data.message || `Berhasil mengupload ${data.count} item kamus`);
         setFile(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
+        if (data.count) setExistingCount((prev) => prev + data.count);
       }
     } catch {
       setErrorMessage("Terjadi kesalahan saat mengupload file");
@@ -239,6 +253,17 @@ export default function KamusUploadPage() {
         </div>
       </div>
       <Separator />
+
+      {existingCount > 0 && (
+        <Alert data-testid="kamus-existing-info">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Data Kamus Sudah Ada</AlertTitle>
+          <AlertDescription>
+            Terdapat {existingCount} item kamus yang sudah tersimpan. Upload file
+            baru akan menampilkan preview perubahan sebelum dikonfirmasi.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Download Template */}
       <Card>
