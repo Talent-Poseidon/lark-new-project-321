@@ -130,7 +130,7 @@ model ProjectAssessor {
 
 model DomainEvent {
   id        String   @id @default(cuid())
-  type      String   // "SubmitProject" | "AssesseeNotified" | "AssessorAssigned" | "KamusSubmitted"
+  type      String   // "SubmitProject" | "AssesseeNotified" | "AssessorAssigned" | "KamusSubmitted" | "StandarSubmitted" | "ScenarioSubmitted"
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   payload   Json     @default("{}")
@@ -149,4 +149,60 @@ model Kamus {
   updatedAt           DateTime @updatedAt
   createdBy           String?
   updatedBy           String?
+
+  standarKompetensi   StandarJabatanKompetensi[]
+  scenarioKompetensi  ScenarioKompetensi[]
+}
+
+// Standar Jabatan - Job position competency profiles
+model StandarJabatan {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  level       String
+  description String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?
+  updatedBy   String?
+
+  kompetensi  StandarJabatanKompetensi[]
+}
+
+// Join table: StandarJabatan <-> Kamus with expected proficiency level
+model StandarJabatanKompetensi {
+  id              String         @id @default(cuid())
+  standarJabatanId String
+  standarJabatan  StandarJabatan @relation(fields: [standarJabatanId], references: [id], onDelete: Cascade)
+  kamusId         String
+  kamus           Kamus          @relation(fields: [kamusId], references: [id])
+  expectedLevel   Int            @default(1) // 1-5 proficiency level
+
+  @@unique([standarJabatanId, kamusId])
+}
+
+// Scenario - Assessment scenarios/instruments
+model Scenario {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  type         String   // "simulasi" | "wawancara" | "tes_tertulis" | "role_play" | "in_tray" | "other"
+  description  String   @db.Text
+  duration     Int      // in minutes
+  instructions String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdBy    String?
+  updatedBy    String?
+
+  kompetensi   ScenarioKompetensi[]
+}
+
+// Join table: Scenario <-> Kamus
+model ScenarioKompetensi {
+  id         String   @id @default(cuid())
+  scenarioId String
+  scenario   Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  kamusId    String
+  kamus      Kamus    @relation(fields: [kamusId], references: [id])
+
+  @@unique([scenarioId, kamusId])
 }

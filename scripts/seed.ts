@@ -230,6 +230,150 @@ async function main() {
     },
   });
 
+  // Seed Standar Jabatan for E2E tests
+  const seedStandar1 = await prisma.standarJabatan.upsert({
+    where: { id: 'seed-standar-1' },
+    update: {},
+    create: {
+      id: 'seed-standar-1',
+      name: 'Manager IT',
+      level: 'Senior',
+      description: 'Standar kompetensi untuk posisi Manager IT',
+      createdBy: testAdmin.id,
+      updatedBy: testAdmin.id,
+    },
+  });
+
+  // Seed StandarJabatan Kompetensi mappings
+  await prisma.standarJabatanKompetensi.upsert({
+    where: { id: 'seed-standar-komp-1' },
+    update: {},
+    create: {
+      id: 'seed-standar-komp-1',
+      standarJabatanId: 'seed-standar-1',
+      kamusId: 'seed-kamus-1',
+      expectedLevel: 4,
+    },
+  });
+
+  await prisma.standarJabatanKompetensi.upsert({
+    where: { id: 'seed-standar-komp-2' },
+    update: {},
+    create: {
+      id: 'seed-standar-komp-2',
+      standarJabatanId: 'seed-standar-1',
+      kamusId: 'seed-kamus-3',
+      expectedLevel: 5,
+    },
+  });
+
+  const seedStandar2 = await prisma.standarJabatan.upsert({
+    where: { id: 'seed-standar-2' },
+    update: {},
+    create: {
+      id: 'seed-standar-2',
+      name: 'Staff Administrasi',
+      level: 'Junior',
+      description: 'Standar kompetensi untuk posisi Staff Administrasi',
+      createdBy: testAdmin.id,
+      updatedBy: testAdmin.id,
+    },
+  });
+
+  await prisma.standarJabatanKompetensi.upsert({
+    where: { id: 'seed-standar-komp-3' },
+    update: {},
+    create: {
+      id: 'seed-standar-komp-3',
+      standarJabatanId: 'seed-standar-2',
+      kamusId: 'seed-kamus-1',
+      expectedLevel: 2,
+    },
+  });
+
+  // Seed StandarSubmitted event
+  const seedStandarEvent = await prisma.domainEvent.upsert({
+    where: { id: 'seed-event-standar-1' },
+    update: {},
+    create: {
+      id: 'seed-event-standar-1',
+      type: 'StandarSubmitted',
+      payload: { standarId: 'seed-standar-1', name: 'Manager IT', createdBy: testAdmin.id, timestamp: new Date().toISOString() },
+    },
+  });
+
+  // Seed Scenario for E2E tests
+  const seedScenario1 = await prisma.scenario.upsert({
+    where: { id: 'seed-scenario-1' },
+    update: {},
+    create: {
+      id: 'seed-scenario-1',
+      name: 'Simulasi Presentasi',
+      type: 'simulasi',
+      description: 'Peserta melakukan presentasi topik yang ditentukan',
+      duration: 30,
+      instructions: 'Persiapkan presentasi selama 15 menit. Presentasi akan dilakukan di depan panel assessor.',
+      createdBy: testAdmin.id,
+      updatedBy: testAdmin.id,
+    },
+  });
+
+  await prisma.scenarioKompetensi.upsert({
+    where: { id: 'seed-scenario-komp-1' },
+    update: {},
+    create: {
+      id: 'seed-scenario-komp-1',
+      scenarioId: 'seed-scenario-1',
+      kamusId: 'seed-kamus-1',
+    },
+  });
+
+  await prisma.scenarioKompetensi.upsert({
+    where: { id: 'seed-scenario-komp-2' },
+    update: {},
+    create: {
+      id: 'seed-scenario-komp-2',
+      scenarioId: 'seed-scenario-1',
+      kamusId: 'seed-kamus-3',
+    },
+  });
+
+  const seedScenario2 = await prisma.scenario.upsert({
+    where: { id: 'seed-scenario-2' },
+    update: {},
+    create: {
+      id: 'seed-scenario-2',
+      name: 'Wawancara Kompetensi',
+      type: 'wawancara',
+      description: 'Wawancara terstruktur untuk mengukur kompetensi peserta',
+      duration: 60,
+      instructions: 'Assessor akan mengajukan pertanyaan berbasis kompetensi. Jawab berdasarkan pengalaman nyata.',
+      createdBy: testAdmin.id,
+      updatedBy: testAdmin.id,
+    },
+  });
+
+  await prisma.scenarioKompetensi.upsert({
+    where: { id: 'seed-scenario-komp-3' },
+    update: {},
+    create: {
+      id: 'seed-scenario-komp-3',
+      scenarioId: 'seed-scenario-2',
+      kamusId: 'seed-kamus-2',
+    },
+  });
+
+  // Seed ScenarioSubmitted event
+  const seedScenarioEvent = await prisma.domainEvent.upsert({
+    where: { id: 'seed-event-scenario-1' },
+    update: {},
+    create: {
+      id: 'seed-event-scenario-1',
+      type: 'ScenarioSubmitted',
+      payload: { scenarioId: 'seed-scenario-1', name: 'Simulasi Presentasi', createdBy: testAdmin.id, timestamp: new Date().toISOString() },
+    },
+  });
+
   console.log({
     originalAdmin,
     testAdmin,
@@ -247,6 +391,12 @@ async function main() {
     seedKamus2,
     seedKamus3,
     seedKamusEvent,
+    seedStandar1,
+    seedStandar2,
+    seedStandarEvent,
+    seedScenario1,
+    seedScenario2,
+    seedScenarioEvent,
   });
 }
 

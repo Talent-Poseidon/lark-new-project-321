@@ -16,17 +16,14 @@ export async function DELETE(
     }
 
     // AC-8/AC-33: Check if kamus is referenced by StandarJabatan or Scenario
-    // These tables don't exist yet, but the check is in place for when they do.
-    // For now, we just allow deletion.
-    // When StandarJabatan and Scenario models are added, uncomment:
-    // const standarCount = await prisma.standarJabatanKompetensi.count({ where: { kamusId: id } });
-    // const scenarioCount = await prisma.scenarioKompetensi.count({ where: { kamusId: id } });
-    // if (standarCount > 0 || scenarioCount > 0) {
-    //   return NextResponse.json(
-    //     { error: "Kamus tidak dapat dihapus karena masih digunakan oleh Standar Jabatan atau Scenario" },
-    //     { status: 400 }
-    //   );
-    // }
+    const standarCount = await prisma.standarJabatanKompetensi.count({ where: { kamusId: id } });
+    const scenarioCount = await prisma.scenarioKompetensi.count({ where: { kamusId: id } });
+    if (standarCount > 0 || scenarioCount > 0) {
+      return NextResponse.json(
+        { error: "Kamus tidak dapat dihapus karena masih digunakan oleh Standar Jabatan atau Scenario" },
+        { status: 400 }
+      );
+    }
 
     await prisma.kamus.delete({ where: { id } });
     return NextResponse.json({ message: "Kamus berhasil dihapus" });
