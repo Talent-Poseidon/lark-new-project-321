@@ -143,12 +143,31 @@ export async function POST(request: NextRequest) {
       }
 
       // Delete items not in the upload (if they exist in DB but not in file)
-      const codesToDelete = existingItems
-        .filter((item) => !uploadedCodes.has(item.code))
-        .map((item) => item.id);
+      const itemsToDelete = existingItems.filter((item) => !uploadedCodes.has(item.code));
 
-      if (codesToDelete.length > 0) {
-        await tx.kamus.deleteMany({ where: { id: { in: codesToDelete } } });
+      if (itemsToDelete.length > 0) {
+        // Check for dependencies before deleting (AC-8)
+        const idsToDelete = itemsToDelete.map((item) => item.id);
+
+        const standarDeps = await tx.standarJabatanKompetensi.findMany({
+          where: { kamusId: { in: idsToDelete } },
+          select: { kamusId: true },
+        });
+        const scenarioDeps = await tx.scenarioKompetensi.findMany({
+          where: { kamusId: { in: idsToDelete } },
+          select: { kamusId: true },
+        });
+
+        const dependentIds = new Set([
+          ...standarDeps.map((d) => d.kamusId),
+          ...scenarioDeps.map((d) => d.kamusId),
+        ]);
+
+        const safeToDelete = idsToDelete.filter((id) => !dependentIds.has(id));
+
+        if (safeToDelete.length > 0) {
+          await tx.kamus.deleteMany({ where: { id: { in: safeToDelete } } });
+        }
       }
 
       // Generate KamusSubmitted event

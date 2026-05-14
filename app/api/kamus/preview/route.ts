@@ -13,11 +13,63 @@ interface KamusRow {
   behavioralIndicators: string;
 }
 
+interface RowError {
+  row: number;
+  field: string;
+  message: string;
+}
+
 interface ChangeItem {
   code: string;
   status: "new" | "updated" | "deleted";
   changes?: Record<string, { old: string; new: string }>;
   data: KamusRow;
+}
+
+function parseRows(rows: Record<string, unknown>[]): KamusRow[] {
+  return rows.map((row) => ({
+    code: String(row["code"] || row["Code"] || row["KODE"] || row["kode"] || "").trim(),
+    name: String(row["name"] || row["Name"] || row["NAMA"] || row["nama"] || "").trim(),
+    type: String(row["type"] || row["Type"] || row["TIPE"] || row["tipe"] || "").trim().toLowerCase(),
+    description: String(row["description"] || row["Description"] || row["DESKRIPSI"] || row["deskripsi"] || "").trim(),
+    behavioralIndicators: String(
+      row["behavioralIndicators"] || row["Behavioral Indicators"] || row["INDIKATOR_PERILAKU"] || row["indikator_perilaku"] || row["behavioral_indicators"] || ""
+    ).trim(),
+  }));
+}
+
+function validateRows(items: KamusRow[]): RowError[] {
+  const errors: RowError[] = [];
+  const seenCodes = new Set<string>();
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const rowNum = i + 2;
+
+    if (!item.code) {
+      errors.push({ row: rowNum, field: "code", message: "Kode wajib diisi" });
+    }
+    if (!item.name) {
+      errors.push({ row: rowNum, field: "name", message: "Nama wajib diisi" });
+    }
+    if (!item.type) {
+      errors.push({ row: rowNum, field: "type", message: "Tipe wajib diisi" });
+    } else if (item.type !== "potensi" && item.type !== "kompetensi") {
+      errors.push({ row: rowNum, field: "type", message: `Tipe harus 'potensi' atau 'kompetensi', ditemukan: '${item.type}'` });
+    }
+    if (!item.description) {
+      errors.push({ row: rowNum, field: "description", message: "Deskripsi wajib diisi" });
+    }
+    if (!item.behavioralIndicators) {
+      errors.push({ row: rowNum, field: "behavioralIndicators", message: "Indikator perilaku wajib diisi" });
+    }
+    if (item.code && seenCodes.has(item.code)) {
+      errors.push({ row: rowNum, field: "code", message: `Kode duplikat dalam file: '${item.code}'` });
+    }
+    if (item.code) seenCodes.add(item.code);
+  }
+
+  return errors;
 }
 
 export async function POST(request: NextRequest) {
@@ -44,16 +96,19 @@ export async function POST(request: NextRequest) {
     const sheet = workbook.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(sheet) as Record<string, unknown>[];
 
-    // Parse uploaded rows
-    const uploadedItems: KamusRow[] = rows.map((row) => ({
-      code: String(row["code"] || row["Code"] || row["KODE"] || row["kode"] || "").trim(),
-      name: String(row["name"] || row["Name"] || row["NAMA"] || row["nama"] || "").trim(),
-      type: String(row["type"] || row["Type"] || row["TIPE"] || row["tipe"] || "").trim().toLowerCase(),
-      description: String(row["description"] || row["Description"] || row["DESKRIPSI"] || row["deskripsi"] || "").trim(),
-      behavioralIndicators: String(
-        row["behavioralIndicators"] || row["Behavioral Indicators"] || row["INDIKATOR_PERILAKU"] || row["indikator_perilaku"] || row["behavioral_indicators"] || ""
-      ).trim(),
-    }));
+    if (rows.length === 0) {
+      return NextResponse.json({ error: "File tidak memiliki data" }, { status: 400 });
+    }
+
+    const uploadedItems = parseRows(rows);
+    const errors = validateRows(uploadedItems);
+
+    if (errors.length > 0) {
+      return NextResponse.json(
+        { error: "Validasi gagal", errors, validCount: uploadedItems.length - errors.length, totalRows: rows.length },
+        { status: 400 }
+      );
+    }
 
     // Get existing kamus items
     const existingItems = await prisma.kamus.findMany();
