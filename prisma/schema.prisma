@@ -48,9 +48,11 @@ model User {
   password      String?   // Hashed password for Credentials provider
   role          String    @default("user") // "user" | "admin"
   is_approved   Boolean   @default(false)  // Approval logic replacement
-  
+
   accounts      Account[]
   sessions      Session[]
+  projects      Project[]
+  projectAssessors ProjectAssessor[]
 }
 
 model VerificationToken {
@@ -59,4 +61,78 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// Master Data - templates, competencies, etc. required before project creation
+model MasterData {
+  id        String   @id @default(cuid())
+  type      String   // "template" | "competency" | "dictionary"
+  name      String
+  data      Json     @default("{}")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Project Management
+model Project {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  configuration Json     @default("{}")
+  status        String   @default("draft") // "draft" | "active" | "completed"
+  createdById   String
+  createdBy     User     @relation(fields: [createdById], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  batches       Batch[]
+  assessors     ProjectAssessor[]
+  events        DomainEvent[]
+}
+
+model Batch {
+  id        String   @id @default(cuid())
+  name      String
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invitations Invitation[]
+}
+
+model Invitation {
+  id        String   @id @default(cuid())
+  batchId   String
+  batch     Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  email     String
+  name      String
+  status    String   @default("pending") // "pending" | "sent" | "accepted" | "expired"
+  sentAt    DateTime?
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectAssessor {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  assignedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([projectId, userId])
+}
+
+model DomainEvent {
+  id        String   @id @default(cuid())
+  type      String   // "SubmitProject" | "AssesseeNotified" | "AssessorAssigned"
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now())
 }
