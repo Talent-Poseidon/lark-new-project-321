@@ -40,12 +40,10 @@ test.describe("Admin can view project list", () => {
   });
 
   test("Admin can navigate to project detail page", async ({ page }) => {
-    const firstItem = page
-      .locator('[data-testid^="project-item-"]')
-      .first();
-    await expect(firstItem).toBeVisible({ timeout: 10000 });
+    const seedItem = page.getByTestId("project-item-seed-project-1");
+    await expect(seedItem).toBeVisible({ timeout: 10000 });
 
-    await firstItem.click();
+    await seedItem.click();
     await expect(page).toHaveURL(/\/admin\/projects\/seed-project-1/);
     console.log("[Project List] Navigated to project detail");
   });

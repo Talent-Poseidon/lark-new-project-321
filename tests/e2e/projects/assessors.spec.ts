@@ -75,7 +75,7 @@ test.describe("Admin can assign assessors to a project", () => {
     await expect(page.getByTestId("event-list")).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.getByText("AssessorAssigned")).toBeVisible();
+    await expect(page.getByText("AssessorAssigned").first()).toBeVisible();
     console.log("[Assessors] AssessorAssigned event visible in timeline");
   });
 });
