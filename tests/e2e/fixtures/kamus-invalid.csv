@@ -1,0 +1,7 @@
+code,name,type,description,behavioralIndicators
+,Missing Code,kompetensi,Deskripsi,Indikator A; Indikator B
+E2E-BAD-002,No Type,,Deskripsi,Indikator A
+E2E-BAD-003,Wrong Type,unknown,Deskripsi,Indikator A
+E2E-BAD-004,Missing Desc,kompetensi,,Indikator A
+E2E-BAD-005,Dup Code,kompetensi,Deskripsi,Indikator A
+E2E-BAD-005,Dup Code Again,potensi,Deskripsi,Indikator A

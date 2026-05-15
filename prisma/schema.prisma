@@ -149,4 +149,58 @@ model Kamus {
   updatedAt           DateTime @updatedAt
   createdBy           String?
   updatedBy           String?
+
+  standarJabatanItems StandarJabatanKompetensi[]
+  scenarioItems       ScenarioKompetensi[]
+}
+
+// Standar Jabatan - placeholder for future epic; needed now so Kamus deletion can be blocked when in use
+model StandarJabatan {
+  id          String   @id @default(cuid())
+  name        String
+  level       String?
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items       StandarJabatanKompetensi[]
+}
+
+model StandarJabatanKompetensi {
+  id               String         @id @default(cuid())
+  standarJabatanId String
+  kamusId          String
+  expectedLevel    Int            @default(1)
+  createdAt        DateTime       @default(now())
+
+  standarJabatan   StandarJabatan @relation(fields: [standarJabatanId], references: [id], onDelete: Cascade)
+  kamus            Kamus          @relation(fields: [kamusId], references: [id])
+
+  @@unique([standarJabatanId, kamusId])
+}
+
+// Scenario - placeholder for future epic
+model Scenario {
+  id           String   @id @default(cuid())
+  name         String
+  type         String?
+  description  String?  @db.Text
+  duration     Int?
+  instructions String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items        ScenarioKompetensi[]
+}
+
+model ScenarioKompetensi {
+  id         String   @id @default(cuid())
+  scenarioId String
+  kamusId    String
+  createdAt  DateTime @default(now())
+
+  scenario   Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  kamus      Kamus    @relation(fields: [kamusId], references: [id])
+
+  @@unique([scenarioId, kamusId])
 }

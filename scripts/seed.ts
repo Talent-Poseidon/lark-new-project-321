@@ -173,6 +173,90 @@ async function main() {
     },
   });
 
+  // Seed Kamus items for E2E tests
+  const seedKamusKompetensi = await prisma.kamus.upsert({
+    where: { code: 'SEED-KMP-001' },
+    update: {},
+    create: {
+      id: 'seed-kamus-kmp-1',
+      code: 'SEED-KMP-001',
+      name: 'Seed Kompetensi Berpikir Analitis',
+      type: 'kompetensi',
+      description: 'Kemampuan menganalisis masalah secara sistematis (seed).',
+      behavioralIndicators: 'Mengidentifikasi akar masalah; Menggunakan data',
+      createdBy: testAdmin.id,
+      updatedBy: testAdmin.id,
+    },
+  });
+
+  const seedKamusPotensi = await prisma.kamus.upsert({
+    where: { code: 'SEED-POT-001' },
+    update: {},
+    create: {
+      id: 'seed-kamus-pot-1',
+      code: 'SEED-POT-001',
+      name: 'Seed Potensi Daya Tahan Stres',
+      type: 'potensi',
+      description: 'Kemampuan mengelola tekanan kerja (seed).',
+      behavioralIndicators: 'Tetap tenang dalam tekanan; Memprioritaskan tugas',
+      createdBy: testAdmin.id,
+      updatedBy: testAdmin.id,
+    },
+  });
+
+  // Kamus item that is referenced by a StandarJabatan → must NOT be deletable
+  const seedKamusUsed = await prisma.kamus.upsert({
+    where: { code: 'SEED-USED-001' },
+    update: {},
+    create: {
+      id: 'seed-kamus-used-1',
+      code: 'SEED-USED-001',
+      name: 'Seed Kompetensi Used By Standar',
+      type: 'kompetensi',
+      description: 'Kamus yang sudah dipakai Standar Jabatan (untuk uji dependency).',
+      behavioralIndicators: 'Memberi contoh; Membimbing rekan',
+      createdBy: testAdmin.id,
+      updatedBy: testAdmin.id,
+    },
+  });
+
+  const seedStandar = await prisma.standarJabatan.upsert({
+    where: { id: 'seed-standar-1' },
+    update: {},
+    create: {
+      id: 'seed-standar-1',
+      name: 'Seed Standar Manager',
+      level: 'Manager',
+      description: 'Standar jabatan untuk uji dependency Kamus',
+    },
+  });
+
+  const seedStandarItem = await prisma.standarJabatanKompetensi.upsert({
+    where: {
+      standarJabatanId_kamusId: {
+        standarJabatanId: 'seed-standar-1',
+        kamusId: 'seed-kamus-used-1',
+      },
+    },
+    update: {},
+    create: {
+      id: 'seed-standar-item-1',
+      standarJabatanId: 'seed-standar-1',
+      kamusId: 'seed-kamus-used-1',
+      expectedLevel: 3,
+    },
+  });
+
+  const seedKamusEvent = await prisma.domainEvent.upsert({
+    where: { id: 'seed-event-kamus-1' },
+    update: {},
+    create: {
+      id: 'seed-event-kamus-1',
+      type: 'KamusSubmitted',
+      payload: { itemCount: 3, source: 'seed' },
+    },
+  });
+
   console.log({
     originalAdmin,
     testAdmin,
@@ -186,6 +270,12 @@ async function main() {
     seedInvitationSent,
     seedInvitationExpired,
     seedEvent,
+    seedKamusKompetensi,
+    seedKamusPotensi,
+    seedKamusUsed,
+    seedStandar,
+    seedStandarItem,
+    seedKamusEvent,
   });
 }
 
