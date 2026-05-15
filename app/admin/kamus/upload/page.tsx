@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,16 @@ export default function KamusUploadPage() {
     changes: ChangeItem[];
     summary: PreviewSummary;
   } | null>(null);
+  const [existingCount, setExistingCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/kamus")
+      .then((r) => r.json())
+      .then((data: unknown) => {
+        if (Array.isArray(data)) setExistingCount(data.length);
+      })
+      .catch((err: Error) => console.error(err));
+  }, []);
 
   const handleFile = (f: File | null) => {
     setFile(f);
@@ -214,6 +224,14 @@ export default function KamusUploadPage() {
           <p className="text-muted-foreground">
             Unggah file template (.xlsx, .xls, .csv) untuk menambah atau memperbarui kamus.
           </p>
+          {existingCount !== null && (
+            <p
+              className="mt-1 text-xs text-muted-foreground"
+              data-testid="kamus-existing-count"
+            >
+              Kamus saat ini: {existingCount} item
+            </p>
+          )}
         </div>
         <Button
           variant="outline"
